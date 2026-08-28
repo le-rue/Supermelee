@@ -1,0 +1,266 @@
+/* ===========================================================
+   Pétanque Turnier — Design tokens
+   Palette: Boulodrome bei Abenddämmerung.
+   Tiefes Kiefergrün, Kies-Beige, Stahl-Boule, gedämpftes Ocker.
+   =========================================================== */
+:root{
+  --pine-950:#161f1a;
+  --pine-900:#20302a;
+  --pine-800:#2b4038;
+  --pine-700:#3a5548;
+  --gravel-100:#e4e0d3;
+  --gravel-50:#f1efe6;
+  --ink:#1c231f;
+  --ink-soft:#4b5750;
+  --boule:#8b95a1;
+  --boule-hi:#d7dbe0;
+  --cochonnet:#c08a2e;
+  --ochre:#c08a2e;
+  --ochre-dark:#96691f;
+  --win:#3c6e47;
+  --lose:#b24c3a;
+  --line:#cac5b4;
+  --radius:14px;
+  --radius-sm:8px;
+  --shadow:0 2px 10px rgba(22,31,26,0.10), 0 1px 2px rgba(22,31,26,0.08);
+  --font-display: "Arial Narrow", "Oswald", "Helvetica Neue Condensed", system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+}
+
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0;
+  background:var(--gravel-100);
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(28,35,31,0.06) 1px, transparent 0);
+  background-size: 16px 16px;
+  color:var(--ink);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:40px;
+}
+
+button, input, select{font-family:inherit;}
+:focus-visible{outline:3px solid var(--ochre); outline-offset:2px;}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+}
+
+/* ---------- Header ---------- */
+.app-header{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--pine-900);
+  color:var(--gravel-50);
+  padding:14px 18px;
+  position:sticky; top:0; z-index:20;
+  box-shadow:var(--shadow);
+}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-mark{display:flex;}
+.brand-text h1{
+  margin:0; font-family:var(--font-display);
+  font-size:19px; letter-spacing:0.06em; text-transform:uppercase;
+  font-weight:700; line-height:1;
+}
+.brand-text h1 span{
+  display:block; font-size:11px; letter-spacing:0.22em;
+  color:var(--ochre); font-weight:600; margin-top:3px;
+}
+.icon-btn{
+  background:transparent;border:1px solid rgba(255,255,255,0.25);
+  color:var(--gravel-50); border-radius:var(--radius-sm);
+  width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+}
+.icon-btn:hover{background:rgba(255,255,255,0.08);}
+
+.drop-menu{
+  position:fixed; top:60px; right:14px; z-index:30;
+  background:var(--pine-900); color:var(--gravel-50);
+  border-radius:var(--radius); box-shadow:var(--shadow);
+  padding:8px; display:flex; flex-direction:column; min-width:220px;
+  border:1px solid var(--pine-700);
+}
+.drop-menu button{
+  background:transparent;border:none;color:inherit;text-align:left;
+  padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:14.5px;
+}
+.drop-menu button:hover{background:var(--pine-800);}
+.drop-menu hr{border:none;border-top:1px solid var(--pine-700);margin:6px 4px;}
+.drop-menu .danger-link{color:#e2a89a;}
+.hidden{display:none !important;}
+
+/* ---------- Track (Signature element: boule-lane progress) ---------- */
+.track{
+  display:flex; align-items:center; gap:0; padding:16px 18px 4px;
+  max-width:760px; margin:0 auto; overflow-x:auto;
+}
+.track-step{
+  display:flex; align-items:center; flex:1; min-width:64px;
+}
+.track-dot{
+  width:26px;height:26px;border-radius:50%;
+  background:var(--gravel-50); border:2px solid var(--boule);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--ink-soft);
+  flex-shrink:0;
+}
+.track-step.done .track-dot{background:var(--pine-800);border-color:var(--pine-800);color:var(--gravel-50);}
+.track-step.active .track-dot{background:var(--ochre);border-color:var(--ochre);color:#fff; box-shadow:0 0 0 4px rgba(192,138,46,0.22);}
+.track-line{flex:1; height:2px; background:var(--boule); margin:0 4px; opacity:0.55;}
+.track-step.done + .track-step .track-line, .track-step.done .track-line{background:var(--pine-800); opacity:0.6;}
+.track-label{
+  font-family:var(--font-display); font-size:10.5px; text-transform:uppercase;
+  letter-spacing:0.05em; color:var(--ink-soft); white-space:nowrap; margin-left:6px;
+}
+.track-step.active .track-label{color:var(--ink); font-weight:700;}
+
+/* ---------- Layout ---------- */
+main{max-width:760px; margin:0 auto; padding:8px 18px 60px;}
+.view-head h2{
+  font-family:var(--font-display); text-transform:uppercase; letter-spacing:0.04em;
+  font-size:26px; margin:18px 0 4px; color:var(--pine-900);
+}
+.hint{color:var(--ink-soft); margin:0 0 18px; font-size:14.5px; line-height:1.5;}
+
+/* ---------- Buttons ---------- */
+.btn{
+  border:none; border-radius:999px; padding:11px 20px; font-size:14.5px;
+  font-weight:600; cursor:pointer; transition:transform .08s ease, background .15s ease;
+  font-family:var(--font-body);
+}
+.btn:active{transform:scale(0.97);}
+.btn.primary{background:var(--ochre); color:#fff;}
+.btn.primary:hover{background:var(--ochre-dark);}
+.btn.primary:disabled{background:#d9cba4; cursor:not-allowed;}
+.btn.secondary{background:var(--pine-900); color:#fff;}
+.btn.secondary:hover{background:var(--pine-800);}
+.btn.ghost{background:transparent; color:var(--pine-900); border:1.5px solid var(--pine-900);}
+.btn.ghost:hover{background:var(--pine-900); color:#fff;}
+.btn.large{width:100%; padding:14px 20px; font-size:15.5px;}
+.btn.small{padding:7px 14px; font-size:13px;}
+.link-btn{background:none;border:none;color:var(--ochre-dark);text-decoration:underline;cursor:pointer;font-size:inherit;padding:0;}
+.view-actions{margin-top:26px;}
+
+/* ---------- Forms ---------- */
+.inline-form{display:flex; gap:8px; margin-bottom:16px;}
+.inline-form input{
+  flex:1; padding:11px 14px; border-radius:var(--radius-sm); border:1.5px solid var(--line);
+  font-size:15px; background:#fff;
+}
+.inline-form input:focus{border-color:var(--ochre);}
+
+/* ---------- Entity lists (players) ---------- */
+.entity-list{list-style:none; margin:0 0 8px; padding:0; display:flex; flex-direction:column; gap:8px;}
+.entity-list li{
+  background:#fff; border:1px solid var(--line); border-radius:var(--radius-sm);
+  padding:10px 12px; display:flex; align-items:center; gap:10px;
+}
+.entity-list.compact li{padding:8px 12px;}
+.entity-name{flex:1; font-size:15px;}
+.entity-name input{
+  width:100%; border:none; background:transparent; font-size:15px; padding:2px 0; color:var(--ink);
+}
+.entity-name input:focus{outline:none; border-bottom:1.5px solid var(--ochre);}
+.icon-action{
+  background:transparent; border:none; cursor:pointer; padding:6px; border-radius:6px;
+  color:var(--ink-soft); display:flex;
+}
+.icon-action:hover{background:var(--gravel-100); color:var(--ink);}
+.icon-action.danger:hover{color:var(--lose);}
+
+.entity-list.checklist li{cursor:pointer; user-select:none;}
+.entity-list.checklist li.selected{border-color:var(--ochre); background:#fbf3e4;}
+.check-box{
+  width:20px;height:20px;border-radius:5px;border:2px solid var(--boule);
+  display:flex;align-items:center;justify-content:center; flex-shrink:0;
+}
+.entity-list.checklist li.selected .check-box{background:var(--ochre); border-color:var(--ochre);}
+.check-box svg{display:none; width:13px;height:13px;}
+.entity-list.checklist li.selected .check-box svg{display:block;}
+
+.empty-state{
+  background:#fff; border:1.5px dashed var(--line); border-radius:var(--radius);
+  padding:22px; text-align:center; color:var(--ink-soft); font-size:14.5px;
+}
+.selection-summary{
+  font-family:var(--font-display); text-transform:uppercase; letter-spacing:0.04em;
+  color:var(--pine-900); font-size:13.5px; margin:10px 2px 0;
+}
+
+/* ---------- Round pool editor ---------- */
+.pool-editor{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:18px;}
+.pool-editor h3{margin:0 0 10px; font-size:15px; font-family:var(--font-display); letter-spacing:0.03em; text-transform:uppercase; color:var(--pine-900);}
+.add-player-row{display:flex; gap:8px; margin:10px 0;}
+.add-player-row select{flex:1; padding:10px; border-radius:var(--radius-sm); border:1.5px solid var(--line); background:#fff; font-size:14.5px;}
+.pool-count{font-size:13px; color:var(--ink-soft); margin:6px 0 14px;}
+
+/* ---------- Matches ---------- */
+.matches-toolbar{display:flex; align-items:center; justify-content:space-between; margin:6px 0 12px;}
+.bye-note{font-size:13px; color:var(--ochre-dark); background:#fbf3e4; padding:6px 10px; border-radius:999px;}
+.matches-grid{display:flex; flex-direction:column; gap:12px;}
+.match-card{
+  background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px; box-shadow:var(--shadow);
+}
+.match-format{
+  font-family:var(--font-display); font-size:11px; letter-spacing:0.08em; text-transform:uppercase;
+  color:var(--ochre-dark); margin-bottom:8px;
+}
+.match-teams{display:flex; align-items:center; gap:10px;}
+.team-box{flex:1;}
+.team-names{font-size:14px; line-height:1.5; color:var(--ink); min-height:22px;}
+.team-vs{font-family:var(--font-display); color:var(--boule); font-weight:700; font-size:13px;}
+.team-score{
+  width:56px; text-align:center; padding:9px 4px; border-radius:var(--radius-sm);
+  border:1.5px solid var(--line); font-family:var(--font-mono); font-size:16px; font-variant-numeric:tabular-nums;
+  margin-top:8px;
+}
+.team-score:focus{border-color:var(--ochre);}
+.error-text{color:var(--lose); font-size:13.5px; margin-top:10px;}
+
+/* ---------- Standings table ---------- */
+.table-wrap{background:#fff; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);}
+.standings-table{width:100%; border-collapse:collapse; font-size:14.5px;}
+.standings-table thead th{
+  background:var(--pine-900); color:var(--gravel-50); text-align:left; padding:10px 8px;
+  font-family:var(--font-display); font-size:11.5px; letter-spacing:0.06em; text-transform:uppercase;
+}
+.standings-table td{padding:10px 8px; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums;}
+.standings-table tbody tr:last-child td{border-bottom:none;}
+.standings-table tbody tr:nth-child(1) td.c-rank{color:var(--ochre-dark); font-weight:800;}
+.c-rank{width:34px; text-align:center; font-family:var(--font-mono);}
+.c-num{text-align:center; width:56px; font-family:var(--font-mono);}
+.c-name{font-weight:600;}
+.diff-pos{color:var(--win); font-weight:700;}
+.diff-neg{color:var(--lose); font-weight:700;}
+
+/* ---------- Finals ---------- */
+.finals-grid{display:flex; flex-direction:column; gap:16px;}
+.final-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow);}
+.final-card h3{margin:0 0 10px; font-family:var(--font-display); letter-spacing:0.03em; text-transform:uppercase; font-size:16px; color:var(--pine-900);}
+.format-choice{display:flex; gap:16px; margin-bottom:12px; font-size:14px;}
+.format-choice label{display:flex; align-items:center; gap:6px; cursor:pointer;}
+.final-body{margin-top:14px;}
+.final-note{font-size:13.5px; color:var(--ink-soft);}
+.final-result{
+  font-family:var(--font-display); text-transform:uppercase; letter-spacing:0.03em; font-size:14px;
+  background:#f1f7f2; border:1px solid var(--win); color:var(--win); padding:10px 12px; border-radius:var(--radius-sm); margin-top:10px;
+}
+
+/* ---------- Summary ---------- */
+.summary-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow);}
+.summary-block{margin-bottom:18px;}
+.summary-block h3{font-family:var(--font-display); text-transform:uppercase; letter-spacing:0.03em; font-size:14px; color:var(--ochre-dark); margin:0 0 6px;}
+.summary-block p{margin:0; font-size:16px;}
+.summary-table{width:100%; border-collapse:collapse; margin-top:6px; font-size:14px;}
+.summary-table td{padding:6px 4px; border-bottom:1px solid var(--line);}
+
+@media (max-width:420px){
+  .track-label{display:none;}
+  .brand-text h1{font-size:16px;}
+  .match-teams{flex-wrap:wrap;}
+}

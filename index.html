@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pétanque Turnier</title>
+<meta name="theme-color" content="#22302A" />
+<meta name="description" content="Turnierverwaltung für Pétanque-Mêlée" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 40 40" width="30" height="30">
+        <circle cx="16" cy="20" r="12" fill="var(--boule)"/>
+        <circle cx="12" cy="14" r="4" fill="var(--boule-hi)"/>
+        <circle cx="31" cy="27" r="5.5" fill="var(--cochonnet)"/>
+      </svg>
+    </span>
+    <div class="brand-text">
+      <h1>Pétanque<span>Turnier</span></h1>
+    </div>
+  </div>
+  <button id="btn-menu" class="icon-btn" aria-label="Menü" aria-expanded="false">
+    <svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+</header>
+
+<nav id="track" class="track" aria-label="Turnierverlauf"></nav>
+
+<nav id="drop-menu" class="drop-menu hidden">
+  <button data-nav="players">Spielerverwaltung</button>
+  <button data-nav="setup">Turnier-Auswahl</button>
+  <button data-nav="round">Aktuelle Runde</button>
+  <button data-nav="standings">Tabelle</button>
+  <button data-nav="finals">Finalrunden</button>
+  <hr/>
+  <button id="btn-reset-tournament" class="danger-link">Turnier zurücksetzen</button>
+</nav>
+
+<main id="app">
+
+  <!-- ===== SPIELERVERWALTUNG ===== -->
+  <section id="view-players" class="view">
+    <div class="view-head">
+      <h2>Spielerdatenbank</h2>
+      <p class="hint">Lege hier alle Spieler:innen einmalig an. Diese Liste bleibt über mehrere Turniere erhalten.</p>
+    </div>
+
+    <form id="form-add-player" class="inline-form" autocomplete="off">
+      <input type="text" id="input-new-player" placeholder="Name eingeben…" required maxlength="40" />
+      <button type="submit" class="btn primary">Hinzufügen</button>
+    </form>
+
+    <ul id="player-list" class="entity-list"></ul>
+    <p id="player-empty" class="empty-state hidden">Noch keine Spieler:innen angelegt. Trag oben den ersten Namen ein.</p>
+
+    <div class="view-actions">
+      <button id="btn-goto-setup" class="btn primary large">Weiter zur Turnier-Auswahl →</button>
+    </div>
+  </section>
+
+  <!-- ===== TURNIER SETUP (Spielerauswahl) ===== -->
+  <section id="view-setup" class="view hidden">
+    <div class="view-head">
+      <h2>Mitspielende auswählen</h2>
+      <p class="hint">Wähle aus der Datenbank, wer bei diesem Turnier antritt.</p>
+    </div>
+
+    <div id="setup-empty" class="empty-state hidden">
+      Es sind noch keine Spieler:innen in der Datenbank. <button class="link-btn" data-nav="players">Jetzt anlegen →</button>
+    </div>
+
+    <ul id="setup-list" class="entity-list checklist"></ul>
+
+    <div class="selection-summary">
+      <span id="setup-count">0</span> Spieler:innen ausgewählt
+    </div>
+
+    <div class="view-actions">
+      <button id="btn-start-tournament" class="btn primary large" disabled>Turnier starten – Runde 1 auslosen →</button>
+    </div>
+  </section>
+
+  <!-- ===== RUNDE (Pool anpassen / Auslosung / Ergebnisse) ===== -->
+  <section id="view-round" class="view hidden">
+    <div class="view-head">
+      <h2 id="round-title">Runde 1</h2>
+      <p class="hint" id="round-hint"></p>
+    </div>
+
+    <div id="round-pool-editor" class="pool-editor hidden">
+      <h3>Teilnehmer:innen dieser Runde</h3>
+      <ul id="round-pool-list" class="entity-list compact"></ul>
+      <div class="add-player-row">
+        <select id="select-add-player"></select>
+        <button id="btn-add-to-pool" class="btn secondary">+ Hinzufügen</button>
+      </div>
+      <div class="pool-count"><span id="pool-count">0</span> Spieler:innen aktiv</div>
+      <button id="btn-draw-round" class="btn primary large">🎲 Runde auslosen</button>
+    </div>
+
+    <div id="round-matches-wrap" class="hidden">
+      <div class="matches-toolbar">
+        <button id="btn-redraw" class="btn ghost small">🔄 Neu auslosen</button>
+        <span id="bye-note" class="bye-note hidden"></span>
+      </div>
+      <div id="round-matches" class="matches-grid"></div>
+      <div class="view-actions">
+        <button id="btn-finish-round" class="btn primary large">Runde abschließen &amp; Tabelle anzeigen →</button>
+      </div>
+      <p id="round-error" class="error-text hidden"></p>
+    </div>
+  </section>
+
+  <!-- ===== TABELLE ===== -->
+  <section id="view-standings" class="view hidden">
+    <div class="view-head">
+      <h2 id="standings-title">Zwischenstand</h2>
+      <p class="hint">Sortiert nach gewonnenen Spielen, bei Gleichstand nach Punktedifferenz.</p>
+    </div>
+
+    <div class="table-wrap">
+      <table class="standings-table">
+        <thead>
+          <tr>
+            <th class="c-rank">#</th>
+            <th class="c-name">Name</th>
+            <th class="c-num">S</th>
+            <th class="c-num">Sp</th>
+            <th class="c-num">Punkte</th>
+            <th class="c-num">Diff</th>
+          </tr>
+        </thead>
+        <tbody id="standings-body"></tbody>
+      </table>
+    </div>
+
+    <div class="view-actions">
+      <button id="btn-standings-continue" class="btn primary large"></button>
+    </div>
+  </section>
+
+  <!-- ===== FINALRUNDEN ===== -->
+  <section id="view-finals" class="view hidden">
+    <div class="view-head">
+      <h2>Finalrunden</h2>
+      <p class="hint">Ungerade Platzierungen spielen gegen gerade Platzierungen der Endtabelle.</p>
+    </div>
+
+    <div class="finals-grid">
+      <div class="final-card" id="final-grosse" data-final="grosse">
+        <h3>🏆 Großes Finale</h3>
+        <div class="format-choice">
+          <label><input type="radio" name="format-grosse" value="doublette" checked /> Doublette (2 vs 2)</label>
+          <label><input type="radio" name="format-grosse" value="triplette" /> Triplette (3 vs 3)</label>
+        </div>
+        <button class="btn secondary" data-form-teams="grosse">Teams bilden</button>
+        <div class="final-body" data-body="grosse"></div>
+      </div>
+
+      <div class="final-card" id="final-kleine" data-final="kleine">
+        <h3>🥈 Kleines Finale</h3>
+        <div class="format-choice">
+          <label><input type="radio" name="format-kleine" value="doublette" checked /> Doublette (2 vs 2)</label>
+          <label><input type="radio" name="format-kleine" value="triplette" /> Triplette (3 vs 3)</label>
+        </div>
+        <button class="btn secondary" data-form-teams="kleine">Teams bilden</button>
+        <div class="final-body" data-body="kleine"></div>
+      </div>
+    </div>
+
+    <div class="view-actions">
+      <button id="btn-goto-summary" class="btn primary large hidden">Turnierergebnis anzeigen →</button>
+    </div>
+  </section>
+
+  <!-- ===== ZUSAMMENFASSUNG ===== -->
+  <section id="view-summary" class="view hidden">
+    <div class="view-head">
+      <h2>🏁 Turnier beendet</h2>
+    </div>
+    <div id="summary-content" class="summary-card"></div>
+    <div class="view-actions">
+      <button id="btn-new-tournament" class="btn primary large">Neues Turnier starten</button>
+    </div>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

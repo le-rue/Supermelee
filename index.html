@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Pétanque Turnier</title>
+<title>Süpermeleé</title>
 <meta name="theme-color" content="#22302A" />
-<meta name="description" content="Turnierverwaltung für Pétanque-Mêlée" />
+<meta name="description" content="Süpermeleé – Turnierverwaltung für Pétanque-Mêlée" />
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
@@ -23,7 +23,7 @@
       </svg>
     </span>
     <div class="brand-text">
-      <h1>Pétanque<span>Turnier</span></h1>
+      <h1>Süpermeleé<span>Pétanque-Turnier</span></h1>
     </div>
   </div>
   <button id="btn-menu" class="icon-btn" aria-label="Menü" aria-expanded="false">
@@ -37,9 +37,11 @@
   <button data-nav="players">Spielerverwaltung</button>
   <button data-nav="setup">Turnier-Auswahl</button>
   <button data-nav="round">Aktuelle Runde</button>
+  <button data-nav="history">Rundenübersicht (Ansetzungen &amp; Ergebnisse)</button>
   <button data-nav="standings">Tabelle</button>
   <button data-nav="finals">Finalrunden</button>
   <hr/>
+  <button id="btn-share">🔗 Turnier als Link teilen</button>
   <button id="btn-reset-tournament" class="danger-link">Turnier zurücksetzen</button>
 </nav>
 
@@ -118,6 +120,15 @@
     </div>
   </section>
 
+  <!-- ===== RUNDENÜBERSICHT (alle Runden, Ansetzungen & Ergebnisse) ===== -->
+  <section id="view-history" class="view hidden">
+    <div class="view-head">
+      <h2>Rundenübersicht</h2>
+      <p class="hint">Ansetzungen und Ergebnisse aller Runden dieses Turniers im Überblick.</p>
+    </div>
+    <div id="history-content"></div>
+  </section>
+
   <!-- ===== TABELLE ===== -->
   <section id="view-standings" class="view hidden">
     <div class="view-head">
@@ -189,6 +200,11 @@
     <div class="view-actions">
       <button id="btn-new-tournament" class="btn primary large">Neues Turnier starten</button>
     </div>
+  </section>
+
+  <!-- ===== GETEILTE ANSICHT (read-only, via #share=… Link) ===== -->
+  <section id="view-shared" class="view hidden">
+    <div id="shared-content"></div>
   </section>
 
 </main>

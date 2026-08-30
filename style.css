@@ -259,6 +259,52 @@ main{max-width:760px; margin:0 auto; padding:8px 18px 60px;}
 .summary-table{width:100%; border-collapse:collapse; margin-top:6px; font-size:14px;}
 .summary-table td{padding:6px 4px; border-bottom:1px solid var(--line);}
 
+/* ---------- Rundenübersicht (History) ---------- */
+.history-round{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin-bottom:12px; box-shadow:var(--shadow);}
+.history-round-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+.history-round-head h3{margin:0; font-family:var(--font-display); text-transform:uppercase; letter-spacing:0.03em; font-size:15px; color:var(--pine-900);}
+.status-pill{font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:0.03em;}
+.status-pill.status-done{background:#e8f2ea; color:var(--win);}
+.status-pill.status-pending{background:#fbf3e4; color:var(--ochre-dark);}
+.status-pill.status-future{background:var(--gravel-100); color:var(--ink-soft);}
+.history-match{
+  display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--gravel-100);
+  font-size:14px; flex-wrap:wrap;
+}
+.history-match:last-of-type{border-bottom:none;}
+.hm-format{font-family:var(--font-display); font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--boule); background:var(--gravel-100); padding:3px 7px; border-radius:5px; flex-shrink:0;}
+.hm-teams{flex:1; min-width:140px;}
+.hm-vs{color:var(--boule); font-weight:700; font-size:12px; margin:0 4px;}
+.hm-score{font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:15px; flex-shrink:0;}
+.history-byes{font-size:12.5px; color:var(--ochre-dark); margin-top:8px;}
+.view-head-inline{
+  font-family:var(--font-display); text-transform:uppercase; letter-spacing:0.04em;
+  font-size:20px; margin:26px 0 12px; color:var(--pine-900);
+}
+.view-head-inline:first-child{margin-top:6px;}
+
+/* ---------- Teilen-Modal ---------- */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(22,31,26,0.55); z-index:50;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.modal-box{
+  background:#fff; border-radius:var(--radius); padding:20px; max-width:420px; width:100%;
+  box-shadow:0 10px 30px rgba(0,0,0,0.25);
+}
+.modal-box h3{margin:0 0 8px; font-family:var(--font-display); text-transform:uppercase; letter-spacing:0.03em; color:var(--pine-900);}
+.share-textarea{
+  width:100%; min-height:80px; margin:10px 0 14px; padding:10px; border-radius:var(--radius-sm);
+  border:1.5px solid var(--line); font-family:var(--font-mono); font-size:12.5px; resize:vertical;
+}
+.modal-actions{display:flex; gap:10px; flex-wrap:wrap;}
+
+/* ---------- Geteilte Ansicht ---------- */
+.shared-banner{
+  background:var(--pine-900); color:var(--gravel-50); padding:12px 16px; border-radius:var(--radius-sm);
+  font-size:13.5px; margin:16px 0 6px;
+}
+
 @media (max-width:420px){
   .track-label{display:none;}
   .brand-text h1{font-size:16px;}

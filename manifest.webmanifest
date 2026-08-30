@@ -1,7 +1,7 @@
 {
-  "name": "Pétanque Turnier",
-  "short_name": "Pétanque",
-  "description": "Turnierverwaltung für Pétanque-Mêlée: Spielerdatenbank, Auslosung, Ergebnisse, Tabelle und Finalrunden.",
+  "name": "Süpermeleé",
+  "short_name": "Süpermeleé",
+  "description": "Süpermeleé – Turnierverwaltung für Pétanque-Mêlée: Spielerdatenbank, Auslosung, Ergebnisse, Tabelle und Finalrunden.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

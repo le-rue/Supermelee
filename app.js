@@ -29,7 +29,7 @@ let state = loadState();
 /* =========================================================
    NAVIGATION
    ========================================================= */
-const VIEWS = ["players", "setup", "round", "standings", "finals", "summary"];
+const VIEWS = ["players", "setup", "round", "history", "standings", "finals", "summary"];
 let currentView = "players";
 
 const STEP_DEFS = [
@@ -68,6 +68,7 @@ function renderTrack() {
   const activeKey = currentView === "players" ? "players"
     : currentView === "setup" ? "setup"
     : currentView === "round" ? "round" + (state.tournament ? state.tournament.roundIndex : 1)
+    : currentView === "history" ? "round" + (state.tournament ? state.tournament.roundIndex : 1)
     : currentView === "standings" ? "round" + (state.tournament ? state.tournament.roundIndex : 1)
     : currentView === "finals" || currentView === "summary" ? "finals"
     : "players";
@@ -102,9 +103,11 @@ document.querySelectorAll("[data-nav]").forEach((btn) => {
   btn.addEventListener("click", () => {
     const target = btn.getAttribute("data-nav");
     if (target === "round" && !state.tournament) return;
-    if (target === "standings" && (!state.tournament || !state.tournament.rounds.some((r) => r.locked))) return;
+    if (target === "history" && !state.tournament) return;
+    if (target === "standings" && (!state.tournament || !state.tournament.rounds.some((r) => r && r.locked))) return;
     if (target === "finals" && (!state.tournament || state.tournament.roundIndex < 3)) return;
     if (target === "round") { renderRoundView(); showView("round"); return; }
+    if (target === "history") { renderHistoryView(); showView("history"); return; }
     if (target === "standings") { renderStandingsView(); showView("standings"); return; }
     if (target === "finals") { renderFinalsView(); showView("finals"); return; }
     if (target === "setup") { renderSetupView(); showView("setup"); return; }
@@ -542,6 +545,242 @@ document.getElementById("btn-finish-round").addEventListener("click", () => {
 });
 
 /* =========================================================
+   RUNDENÜBERSICHT (alle Runden: Ansetzungen & Ergebnisse)
+   ========================================================= */
+function escName(ids) {
+  return ids.map((id) => escapeHtml(playerName(id))).join(" &amp; ");
+}
+
+function renderHistoryView() {
+  const t = state.tournament;
+  if (!t) return;
+  const wrap = document.getElementById("history-content");
+  wrap.innerHTML = "";
+
+  for (let i = 0; i < 3; i++) {
+    const roundNum = i + 1;
+    const round = t.rounds[i];
+    let statusLabel, statusClass;
+    if (round && round.locked) { statusLabel = "Abgeschlossen"; statusClass = "status-done"; }
+    else if (round) { statusLabel = "Ausgelost – Ergebnisse ausstehend"; statusClass = "status-pending"; }
+    else if (roundNum === t.roundIndex) { statusLabel = "Wird vorbereitet"; statusClass = "status-pending"; }
+    else { statusLabel = "Noch nicht gestartet"; statusClass = "status-future"; }
+
+    let inner = "";
+    if (round) {
+      inner = round.matches.map((m) => {
+        const scoreText = (m.scoreA !== null && m.scoreB !== null)
+          ? `<strong>${m.scoreA}:${m.scoreB}</strong>`
+          : "<em>offen</em>";
+        return `<div class="history-match">
+          <span class="hm-format">${m.format}</span>
+          <span class="hm-teams">${escName(m.teamA)} <span class="hm-vs">vs</span> ${escName(m.teamB)}</span>
+          <span class="hm-score">${scoreText}</span>
+        </div>`;
+      }).join("");
+      if (round.byes && round.byes.length) {
+        inner += `<div class="history-byes">Pause: ${round.byes.map((id) => escapeHtml(playerName(id))).join(", ")}</div>`;
+      }
+    } else {
+      inner = `<p class="final-note">–</p>`;
+    }
+
+    const block = document.createElement("div");
+    block.className = "history-round";
+    block.innerHTML = `<div class="history-round-head"><h3>Runde ${roundNum}</h3><span class="status-pill ${statusClass}">${statusLabel}</span></div>${inner}`;
+    wrap.appendChild(block);
+  }
+}
+
+/* =========================================================
+   TURNIER TEILEN (read-only Link, ohne Server)
+   ========================================================= */
+function b64EncodeUnicode(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function b64DecodeUnicode(str) {
+  return decodeURIComponent(escape(atob(str)));
+}
+
+function buildFinalSnapshot(f) {
+  if (!f) return null;
+  return {
+    format: f.format,
+    teamA: f.teamA.map(playerName),
+    teamB: f.teamB.map(playerName),
+    ranksA: f.ranksA,
+    ranksB: f.ranksB,
+    scoreA: f.scoreA,
+    scoreB: f.scoreB,
+    done: f.done,
+  };
+}
+
+function buildShareSnapshot() {
+  const t = state.tournament;
+  return {
+    app: "Süpermeleé",
+    generated: new Date().toISOString(),
+    rounds: [0, 1, 2].map((i) => {
+      const r = t.rounds[i];
+      if (!r) return { number: i + 1, started: false };
+      return {
+        number: i + 1,
+        started: true,
+        locked: r.locked,
+        byes: (r.byes || []).map(playerName),
+        matches: r.matches.map((m) => ({
+          format: m.format,
+          teamA: m.teamA.map(playerName),
+          teamB: m.teamB.map(playerName),
+          scoreA: m.scoreA,
+          scoreB: m.scoreB,
+        })),
+      };
+    }),
+    standings: computeStandings().map((s) => ({
+      name: s.name, wins: s.wins, played: s.played, pf: s.pf, pa: s.pa, diff: s.diff,
+    })),
+    finals: t.finals ? {
+      grosse: buildFinalSnapshot(t.finals.grosse),
+      kleine: buildFinalSnapshot(t.finals.kleine),
+    } : null,
+  };
+}
+
+function buildShareLink() {
+  const snap = buildShareSnapshot();
+  const encoded = b64EncodeUnicode(JSON.stringify(snap));
+  const base = location.origin + location.pathname;
+  return base + "#share=" + encoded;
+}
+
+function openShareModal(link) {
+  const old = document.getElementById("share-overlay");
+  if (old) old.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "share-overlay";
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal-box">
+      <h3>Turnier teilen</h3>
+      <p class="hint">Dieser Link zeigt den aktuellen Stand (Ansetzungen, Ergebnisse, Tabelle, Finalrunden) – nur lesbar, ohne Anmeldung. Bei neuen Ergebnissen einfach erneut teilen.</p>
+      <textarea readonly class="share-textarea" id="share-link-text">${link}</textarea>
+      <div class="modal-actions">
+        <button class="btn secondary" id="btn-copy-link">Link kopieren</button>
+        <button class="btn ghost" id="btn-close-modal">Schließen</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+  document.getElementById("btn-close-modal").addEventListener("click", () => overlay.remove());
+  document.getElementById("btn-copy-link").addEventListener("click", async () => {
+    const textarea = document.getElementById("share-link-text");
+    const btn = document.getElementById("btn-copy-link");
+    try {
+      await navigator.clipboard.writeText(link);
+      btn.textContent = "Kopiert ✓";
+    } catch (e) {
+      textarea.select();
+      btn.textContent = "Bitte manuell kopieren";
+    }
+  });
+}
+
+document.getElementById("btn-share").addEventListener("click", () => {
+  document.getElementById("drop-menu").classList.add("hidden");
+  if (!state.tournament) { alert("Es läuft noch kein Turnier."); return; }
+  const link = buildShareLink();
+  if (navigator.share) {
+    navigator.share({ title: "Süpermeleé Turnier", text: "Aktueller Turnierstand", url: link }).catch(() => openShareModal(link));
+  } else {
+    openShareModal(link);
+  }
+});
+
+function renderSharedReportFromHash() {
+  const hash = location.hash;
+  if (!hash.startsWith("#share=")) return false;
+  let data;
+  try {
+    const encoded = decodeURIComponent(hash.slice("#share=".length));
+    data = JSON.parse(b64DecodeUnicode(encoded));
+  } catch (e) {
+    console.warn("Konnte geteilte Daten nicht lesen:", e);
+    return false;
+  }
+
+  document.getElementById("track").classList.add("hidden");
+  document.getElementById("btn-menu").classList.add("hidden");
+  VIEWS.forEach((v) => document.getElementById("view-" + v).classList.add("hidden"));
+  document.getElementById("view-shared").classList.remove("hidden");
+
+  let html = `<div class="shared-banner">🔗 Geteilte Ansicht von <strong>Süpermeleé</strong> – nur lesbar. Stand: ${escapeHtml(new Date(data.generated).toLocaleString("de-DE"))}</div>`;
+
+  html += `<h2 class="view-head-inline">Runden</h2>`;
+  data.rounds.forEach((r) => {
+    html += `<div class="history-round"><div class="history-round-head"><h3>Runde ${r.number}</h3></div>`;
+    if (!r.started) {
+      html += `<p class="final-note">Noch nicht gestartet</p>`;
+    } else {
+      r.matches.forEach((m) => {
+        const scoreText = (m.scoreA !== null && m.scoreB !== null) ? `<strong>${m.scoreA}:${m.scoreB}</strong>` : "<em>offen</em>";
+        html += `<div class="history-match">
+          <span class="hm-format">${escapeHtml(m.format)}</span>
+          <span class="hm-teams">${m.teamA.map(escapeHtml).join(" &amp; ")} <span class="hm-vs">vs</span> ${m.teamB.map(escapeHtml).join(" &amp; ")}</span>
+          <span class="hm-score">${scoreText}</span>
+        </div>`;
+      });
+      if (r.byes && r.byes.length) html += `<div class="history-byes">Pause: ${r.byes.map(escapeHtml).join(", ")}</div>`;
+    }
+    html += `</div>`;
+  });
+
+  html += `<h2 class="view-head-inline">Tabelle</h2>`;
+  html += `<div class="table-wrap"><table class="standings-table"><thead><tr><th class="c-rank">#</th><th class="c-name">Name</th><th class="c-num">S</th><th class="c-num">Sp</th><th class="c-num">Punkte</th><th class="c-num">Diff</th></tr></thead><tbody>`;
+  data.standings.forEach((s, i) => {
+    const diffClass = s.diff > 0 ? "diff-pos" : s.diff < 0 ? "diff-neg" : "";
+    html += `<tr><td class="c-rank">${i + 1}</td><td class="c-name">${escapeHtml(s.name)}</td><td class="c-num">${s.wins}</td><td class="c-num">${s.played}</td><td class="c-num">${s.pf}:${s.pa}</td><td class="c-num ${diffClass}">${s.diff > 0 ? "+" : ""}${s.diff}</td></tr>`;
+  });
+  html += `</tbody></table></div>`;
+
+  if (data.finals) {
+    html += `<h2 class="view-head-inline">Finalrunden</h2><div class="finals-grid">`;
+    [["grosse", "🏆 Großes Finale"], ["kleine", "🥈 Kleines Finale"]].forEach(([key, title]) => {
+      const f = data.finals[key];
+      html += `<div class="final-card"><h3>${title}</h3>`;
+      if (!f) {
+        html += `<p class="final-note">Nicht ausgetragen.</p>`;
+      } else {
+        html += `<div class="match-teams">
+          <div class="team-box"><div class="team-names">${f.teamA.map(escapeHtml).join(" &amp; ")}<br><small>Platz ${f.ranksA.join(", ")}</small></div></div>
+          <div class="team-vs">VS</div>
+          <div class="team-box"><div class="team-names">${f.teamB.map(escapeHtml).join(" &amp; ")}<br><small>Platz ${f.ranksB.join(", ")}</small></div></div>
+        </div>`;
+        if (f.done) {
+          const winnerIsA = f.scoreA > f.scoreB;
+          const winners = (winnerIsA ? f.teamA : f.teamB).map(escapeHtml).join(" &amp; ");
+          html += `<div class="final-result">Sieger: ${winners} (${f.scoreA}:${f.scoreB})</div>`;
+        } else {
+          html += `<p class="final-note">Ergebnis steht noch aus.</p>`;
+        }
+      }
+      html += `</div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `<div class="view-actions"><button id="btn-open-own-app" class="btn ghost large">Eigene Süpermeleé-App öffnen</button></div>`;
+
+  document.getElementById("shared-content").innerHTML = html;
+  document.getElementById("btn-open-own-app").addEventListener("click", () => {
+    location.hash = "";
+    location.reload();
+  });
+  return true;
+}
+
+/* =========================================================
    TABELLE
    ========================================================= */
 function computeStandings() {
@@ -839,7 +1078,21 @@ document.getElementById("btn-new-tournament").addEventListener("click", () => {
 /* =========================================================
    INIT
    ========================================================= */
+function registerServiceWorker() {
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch((e) => console.warn("SW-Registrierung fehlgeschlagen:", e));
+    });
+  }
+}
+
 function init() {
+  // Geteilter Link (#share=…) hat Vorrang: nur lesbarer Bericht, kein Zugriff auf lokale Daten.
+  if (renderSharedReportFromHash()) {
+    registerServiceWorker();
+    return;
+  }
+
   renderPlayersView();
 
   if (state.tournament) {
@@ -853,11 +1106,7 @@ function init() {
     showView("players");
   }
 
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js").catch((e) => console.warn("SW-Registrierung fehlgeschlagen:", e));
-    });
-  }
+  registerServiceWorker();
 }
 
 init();

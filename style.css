@@ -208,18 +208,25 @@ main{max-width:760px; margin:0 auto; padding:8px 18px 60px;}
 }
 .match-format{
   font-family:var(--font-display); font-size:11px; letter-spacing:0.08em; text-transform:uppercase;
-  color:var(--ochre-dark); margin-bottom:8px;
+  color:var(--ochre-dark); margin-bottom:10px;
 }
-.match-teams{display:flex; align-items:center; gap:10px;}
-.team-box{flex:1;}
-.team-names{font-size:14px; line-height:1.5; color:var(--ink); min-height:22px;}
-.team-vs{font-family:var(--font-display); color:var(--boule); font-weight:700; font-size:13px;}
-.team-score{
-  width:56px; text-align:center; padding:9px 4px; border-radius:var(--radius-sm);
-  border:1.5px solid var(--line); font-family:var(--font-mono); font-size:16px; font-variant-numeric:tabular-nums;
-  margin-top:8px;
+/* Namen außen in kleinen Kästchen, Ergebnis mittig */
+.match-row{display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center;}
+.team-chips{display:flex; flex-direction:column; gap:6px;}
+.chip{
+  background:var(--gravel-100); border:1px solid var(--line); border-radius:8px;
+  padding:7px 8px; font-size:13.5px; line-height:1.25; text-align:center; word-break:break-word;
 }
-.team-score:focus{border-color:var(--ochre);}
+.final-ranks{font-size:11px; color:var(--ink-soft); text-align:center; margin-top:2px;}
+.score-mid{display:flex; align-items:center; justify-content:center; gap:6px; font-family:var(--font-mono); font-weight:700;}
+.score-mid input.team-score{
+  width:46px; text-align:center; padding:9px 2px; border-radius:8px; border:1.5px solid var(--line);
+  font-family:var(--font-mono); font-size:16px; font-variant-numeric:tabular-nums; margin:0;
+}
+.score-mid input.team-score:focus{border-color:var(--ochre);}
+.score-mid.readonly{font-size:19px; font-variant-numeric:tabular-nums;}
+.score-mid.readonly.muted{font-size:13px; color:var(--ink-soft); font-weight:400;}
+.score-sep{color:var(--boule); font-size:16px;}
 .error-text{color:var(--lose); font-size:13.5px; margin-top:10px;}
 
 /* ---------- Standings table ---------- */
@@ -246,6 +253,9 @@ main{max-width:760px; margin:0 auto; padding:8px 18px 60px;}
 .format-choice label{display:flex; align-items:center; gap:6px; cursor:pointer;}
 .final-body{margin-top:14px;}
 .final-note{font-size:13.5px; color:var(--ink-soft);}
+.finals-ranks-row{display:grid; grid-template-columns:1fr auto 1fr; gap:10px; font-size:11px; color:var(--ink-soft); text-align:center; margin-top:2px;}
+.finals-ranks-row span:first-child{grid-column:1;}
+.finals-ranks-row span:last-child{grid-column:3;}
 .final-result{
   font-family:var(--font-display); text-transform:uppercase; letter-spacing:0.03em; font-size:14px;
   background:#f1f7f2; border:1px solid var(--win); color:var(--win); padding:10px 12px; border-radius:var(--radius-sm); margin-top:10px;
@@ -267,21 +277,22 @@ main{max-width:760px; margin:0 auto; padding:8px 18px 60px;}
 .status-pill.status-done{background:#e8f2ea; color:var(--win);}
 .status-pill.status-pending{background:#fbf3e4; color:var(--ochre-dark);}
 .status-pill.status-future{background:var(--gravel-100); color:var(--ink-soft);}
-.history-match{
-  display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--gravel-100);
-  font-size:14px; flex-wrap:wrap;
-}
+.history-match{padding:12px 0; border-bottom:1px solid var(--gravel-100);}
 .history-match:last-of-type{border-bottom:none;}
-.hm-format{font-family:var(--font-display); font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--boule); background:var(--gravel-100); padding:3px 7px; border-radius:5px; flex-shrink:0;}
-.hm-teams{flex:1; min-width:140px;}
-.hm-vs{color:var(--boule); font-weight:700; font-size:12px; margin:0 4px;}
-.hm-score{font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:15px; flex-shrink:0;}
+.history-match .hm-format{
+  display:inline-block; font-family:var(--font-display); font-size:10px; text-transform:uppercase;
+  letter-spacing:0.05em; color:var(--boule); background:var(--gravel-100); padding:3px 7px; border-radius:5px; margin-bottom:8px;
+}
 .history-byes{font-size:12.5px; color:var(--ochre-dark); margin-top:8px;}
 .view-head-inline{
   font-family:var(--font-display); text-transform:uppercase; letter-spacing:0.04em;
   font-size:20px; margin:26px 0 12px; color:var(--pine-900);
 }
 .view-head-inline:first-child{margin-top:6px;}
+
+.export-row{margin-top:34px; padding-top:18px; border-top:1px dashed var(--line); text-align:center;}
+.export-row .btn{opacity:0.85;}
+.export-row .btn:hover{opacity:1;}
 
 /* ---------- Teilen-Modal ---------- */
 .modal-overlay{

@@ -266,6 +266,34 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+/**
+ * Baut die Kartenzeile eines Spiels: Namen außen in Kästchen, Ergebnis mittig.
+ * readonly=true → reines Anzeige-Ergebnis (Text); sonst editierbare Score-Inputs.
+ */
+function matchRowHTML({ teamANames, teamBNames, matchId = null, scoreA = null, scoreB = null, locked = false, readonly = false }) {
+  const chipsA = teamANames.map((n) => `<div class="chip">${n}</div>`).join("");
+  const chipsB = teamBNames.map((n) => `<div class="chip">${n}</div>`).join("");
+  let mid;
+  if (readonly) {
+    if (scoreA !== null && scoreB !== null) {
+      mid = `<div class="score-mid readonly"><span>${scoreA}</span><span class="score-sep">:</span><span>${scoreB}</span></div>`;
+    } else {
+      mid = `<div class="score-mid readonly muted"><em>offen</em></div>`;
+    }
+  } else {
+    mid = `<div class="score-mid">
+      <input type="number" min="0" max="13" class="team-score" data-match="${matchId}" data-side="A" value="${scoreA ?? ""}" ${locked ? "disabled" : ""}/>
+      <span class="score-sep">:</span>
+      <input type="number" min="0" max="13" class="team-score" data-match="${matchId}" data-side="B" value="${scoreB ?? ""}" ${locked ? "disabled" : ""}/>
+    </div>`;
+  }
+  return `<div class="match-row">
+    <div class="team-chips">${chipsA}</div>
+    ${mid}
+    <div class="team-chips">${chipsB}</div>
+  </div>`;
+}
+
 /* =========================================================
    TEAM-AUSLOSUNG
    ========================================================= */
@@ -475,17 +503,15 @@ function renderMatches(round) {
     card.className = "match-card";
     card.innerHTML = `
       <div class="match-format">${m.format}</div>
-      <div class="match-teams">
-        <div class="team-box">
-          <div class="team-names">${m.teamA.map(playerName).join(" &amp; ")}</div>
-          <input type="number" min="0" max="13" class="team-score" data-match="${m.id}" data-side="A" value="${m.scoreA ?? ""}" ${round.locked ? "disabled" : ""} />
-        </div>
-        <div class="team-vs">VS</div>
-        <div class="team-box">
-          <div class="team-names">${m.teamB.map(playerName).join(" &amp; ")}</div>
-          <input type="number" min="0" max="13" class="team-score" data-match="${m.id}" data-side="B" value="${m.scoreB ?? ""}" ${round.locked ? "disabled" : ""} />
-        </div>
-      </div>
+      ${matchRowHTML({
+        teamANames: m.teamA.map((id) => escapeHtml(playerName(id))),
+        teamBNames: m.teamB.map((id) => escapeHtml(playerName(id))),
+        matchId: m.id,
+        scoreA: m.scoreA,
+        scoreB: m.scoreB,
+        locked: round.locked,
+        readonly: false,
+      })}
     `;
     wrap.appendChild(card);
   });
@@ -505,17 +531,40 @@ function renderMatches(round) {
   document.getElementById("btn-finish-round").classList.toggle("hidden", round.locked);
   document.getElementById("round-error").classList.add("hidden");
 
+  // Nach Abschluss: ein einziger Link direkt zur nächsten Runde bzw. den Finalrunden
+  // (die Tabelle bleibt jederzeit über das Menü erreichbar).
+  let cta = document.getElementById("round-locked-cta");
   if (round.locked) {
-    // Nach Abschluss: Weiter-Button zur Tabelle anzeigen statt Formular
-    let cta = document.getElementById("round-locked-cta");
     if (!cta) {
       cta = document.createElement("button");
       cta.id = "round-locked-cta";
       cta.className = "btn primary large";
-      document.getElementById("round-matches-wrap").appendChild(cta);
+      document.getElementById("round-actions").appendChild(cta);
     }
-    cta.textContent = "Zur Tabelle →";
-    cta.onclick = () => { renderStandingsView(); showView("standings"); };
+    const t = state.tournament;
+    const isFinal = t.roundIndex >= 3;
+    cta.textContent = isFinal ? "Weiter zu den Finalrunden →" : "Weiter zu Runde " + (t.roundIndex + 1) + " →";
+    cta.onclick = goToNextStage;
+  } else if (cta) {
+    cta.remove();
+  }
+}
+
+function goToNextStage() {
+  const t = state.tournament;
+  const isFinal = t.roundIndex >= 3;
+  if (isFinal) {
+    t.stage = "finals";
+    if (!t.finals) t.finals = { grosse: null, kleine: null };
+    saveState();
+    renderFinalsView();
+    showView("finals");
+  } else {
+    t.roundIndex++;
+    t.stage = "round";
+    saveState();
+    renderRoundView();
+    showView("round");
   }
 }
 
@@ -538,19 +587,13 @@ document.getElementById("btn-finish-round").addEventListener("click", () => {
   }
   errorEl.classList.add("hidden");
   round.locked = true;
-  t.stage = "standings";
   saveState();
-  renderStandingsView();
-  showView("standings");
+  renderRoundView();
 });
 
 /* =========================================================
    RUNDENÜBERSICHT (alle Runden: Ansetzungen & Ergebnisse)
    ========================================================= */
-function escName(ids) {
-  return ids.map((id) => escapeHtml(playerName(id))).join(" &amp; ");
-}
-
 function renderHistoryView() {
   const t = state.tournament;
   if (!t) return;
@@ -569,13 +612,15 @@ function renderHistoryView() {
     let inner = "";
     if (round) {
       inner = round.matches.map((m) => {
-        const scoreText = (m.scoreA !== null && m.scoreB !== null)
-          ? `<strong>${m.scoreA}:${m.scoreB}</strong>`
-          : "<em>offen</em>";
         return `<div class="history-match">
-          <span class="hm-format">${m.format}</span>
-          <span class="hm-teams">${escName(m.teamA)} <span class="hm-vs">vs</span> ${escName(m.teamB)}</span>
-          <span class="hm-score">${scoreText}</span>
+          <div class="hm-format">${escapeHtml(m.format)}</div>
+          ${matchRowHTML({
+            teamANames: m.teamA.map((id) => escapeHtml(playerName(id))),
+            teamBNames: m.teamB.map((id) => escapeHtml(playerName(id))),
+            scoreA: m.scoreA,
+            scoreB: m.scoreB,
+            readonly: true,
+          })}
         </div>`;
       }).join("");
       if (round.byes && round.byes.length) {
@@ -689,6 +734,11 @@ function openShareModal(link) {
 
 document.getElementById("btn-share").addEventListener("click", () => {
   document.getElementById("drop-menu").classList.add("hidden");
+  triggerShare();
+});
+document.getElementById("btn-share-history").addEventListener("click", triggerShare);
+
+function triggerShare() {
   if (!state.tournament) { alert("Es läuft noch kein Turnier."); return; }
   const link = buildShareLink();
   if (navigator.share) {
@@ -696,7 +746,7 @@ document.getElementById("btn-share").addEventListener("click", () => {
   } else {
     openShareModal(link);
   }
-});
+}
 
 function renderSharedReportFromHash() {
   const hash = location.hash;
@@ -724,11 +774,15 @@ function renderSharedReportFromHash() {
       html += `<p class="final-note">Noch nicht gestartet</p>`;
     } else {
       r.matches.forEach((m) => {
-        const scoreText = (m.scoreA !== null && m.scoreB !== null) ? `<strong>${m.scoreA}:${m.scoreB}</strong>` : "<em>offen</em>";
         html += `<div class="history-match">
-          <span class="hm-format">${escapeHtml(m.format)}</span>
-          <span class="hm-teams">${m.teamA.map(escapeHtml).join(" &amp; ")} <span class="hm-vs">vs</span> ${m.teamB.map(escapeHtml).join(" &amp; ")}</span>
-          <span class="hm-score">${scoreText}</span>
+          <div class="hm-format">${escapeHtml(m.format)}</div>
+          ${matchRowHTML({
+            teamANames: m.teamA.map(escapeHtml),
+            teamBNames: m.teamB.map(escapeHtml),
+            scoreA: m.scoreA,
+            scoreB: m.scoreB,
+            readonly: true,
+          })}
         </div>`;
       });
       if (r.byes && r.byes.length) html += `<div class="history-byes">Pause: ${r.byes.map(escapeHtml).join(", ")}</div>`;
@@ -752,11 +806,14 @@ function renderSharedReportFromHash() {
       if (!f) {
         html += `<p class="final-note">Nicht ausgetragen.</p>`;
       } else {
-        html += `<div class="match-teams">
-          <div class="team-box"><div class="team-names">${f.teamA.map(escapeHtml).join(" &amp; ")}<br><small>Platz ${f.ranksA.join(", ")}</small></div></div>
-          <div class="team-vs">VS</div>
-          <div class="team-box"><div class="team-names">${f.teamB.map(escapeHtml).join(" &amp; ")}<br><small>Platz ${f.ranksB.join(", ")}</small></div></div>
-        </div>`;
+        html += matchRowHTML({
+          teamANames: f.teamA.map(escapeHtml),
+          teamBNames: f.teamB.map(escapeHtml),
+          scoreA: f.done ? f.scoreA : null,
+          scoreB: f.done ? f.scoreB : null,
+          readonly: true,
+        });
+        html += `<div class="finals-ranks-row"><span>Platz ${f.ranksA.join(", ")}</span><span>Platz ${f.ranksB.join(", ")}</span></div>`;
         if (f.done) {
           const winnerIsA = f.scoreA > f.scoreB;
           const winners = (winnerIsA ? f.teamA : f.teamB).map(escapeHtml).join(" &amp; ");
@@ -852,25 +909,8 @@ function renderStandingsView() {
   });
 
   const continueBtn = document.getElementById("btn-standings-continue");
-  if (isFinal) {
-    continueBtn.textContent = "Weiter zu den Finalrunden →";
-    continueBtn.onclick = () => {
-      t.stage = "finals";
-      if (!t.finals) t.finals = { grosse: null, kleine: null };
-      saveState();
-      renderFinalsView();
-      showView("finals");
-    };
-  } else {
-    continueBtn.textContent = "Weiter zu Runde " + (t.roundIndex + 1) + " →";
-    continueBtn.onclick = () => {
-      t.roundIndex++;
-      t.stage = "round";
-      saveState();
-      renderRoundView();
-      showView("round");
-    };
-  }
+  continueBtn.textContent = isFinal ? "Weiter zu den Finalrunden →" : "Weiter zu Runde " + (t.roundIndex + 1) + " →";
+  continueBtn.onclick = goToNextStage;
 }
 
 /* =========================================================
@@ -915,21 +955,23 @@ function renderFinalCard(key, offset) {
     return;
   }
 
-  const teamAWords = existing.teamA.map(playerName).join(" & ");
-  const teamBWords = existing.teamB.map(playerName).join(" & ");
   const ranksA = existing.ranksA.join(", ");
   const ranksB = existing.ranksB.join(", ");
 
   body.innerHTML = `
-    <div class="match-teams">
-      <div class="team-box">
-        <div class="team-names">${escapeHtml(teamAWords)}<br><small>Platz ${ranksA}</small></div>
-        <input type="number" min="0" max="13" class="team-score" id="score-${key}-A" value="${existing.scoreA ?? ""}" ${existing.done ? "disabled" : ""}/>
+    <div class="match-row">
+      <div class="team-chips">
+        ${existing.teamA.map((id) => `<div class="chip">${escapeHtml(playerName(id))}</div>`).join("")}
+        <div class="final-ranks">Platz ${ranksA}</div>
       </div>
-      <div class="team-vs">VS</div>
-      <div class="team-box">
-        <div class="team-names">${escapeHtml(teamBWords)}<br><small>Platz ${ranksB}</small></div>
+      <div class="score-mid">
+        <input type="number" min="0" max="13" class="team-score" id="score-${key}-A" value="${existing.scoreA ?? ""}" ${existing.done ? "disabled" : ""}/>
+        <span class="score-sep">:</span>
         <input type="number" min="0" max="13" class="team-score" id="score-${key}-B" value="${existing.scoreB ?? ""}" ${existing.done ? "disabled" : ""}/>
+      </div>
+      <div class="team-chips">
+        ${existing.teamB.map((id) => `<div class="chip">${escapeHtml(playerName(id))}</div>`).join("")}
+        <div class="final-ranks">Platz ${ranksB}</div>
       </div>
     </div>
   `;

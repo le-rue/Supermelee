@@ -37,9 +37,8 @@
   <button data-nav="players">Spielerverwaltung</button>
   <button data-nav="setup">Turnier-Auswahl</button>
   <button data-nav="round">Aktuelle Runde</button>
-  <button data-nav="history">Rundenübersicht (Ansetzungen &amp; Ergebnisse)</button>
+  <button data-nav="history">Rundenübersicht</button>
   <button data-nav="standings">Tabelle</button>
-  <button data-nav="finals">Finalrunden</button>
   <hr/>
   <button id="btn-share">🔗 Turnier als Link teilen</button>
   <button id="btn-reset-tournament" class="danger-link">Turnier zurücksetzen</button>
@@ -104,7 +103,7 @@
         <button id="btn-add-to-pool" class="btn secondary">+ Hinzufügen</button>
       </div>
       <div class="pool-count"><span id="pool-count">0</span> Spieler:innen aktiv</div>
-      <button id="btn-draw-round" class="btn primary large">🎲 Runde auslosen</button>
+      <button id="btn-draw-round" class="btn primary large">Runde auslosen</button>
     </div>
 
     <div id="round-matches-wrap" class="hidden">
@@ -127,6 +126,37 @@
       <p class="hint">Ansetzungen und Ergebnisse aller Runden dieses Turniers im Überblick.</p>
     </div>
     <div id="history-content"></div>
+
+    <div id="history-finals-wrap" class="hidden">
+      <h2 class="view-head-inline">Finalrunden</h2>
+      <p class="hint">Ungerade Platzierungen spielen gegen gerade Platzierungen der Endtabelle.</p>
+
+      <div class="finals-grid">
+        <div class="final-card" id="final-grosse" data-final="grosse">
+          <h3>🏆 Großes Finale</h3>
+          <div class="format-choice">
+            <label><input type="radio" name="format-grosse" value="doublette" checked /> Doublette (2 vs 2)</label>
+            <label><input type="radio" name="format-grosse" value="triplette" /> Triplette (3 vs 3)</label>
+          </div>
+          <button class="btn secondary" data-form-teams="grosse">Teams bilden</button>
+          <div class="final-body" data-body="grosse"></div>
+        </div>
+
+        <div class="final-card" id="final-kleine" data-final="kleine">
+          <h3>🥈 Kleines Finale</h3>
+          <div class="format-choice">
+            <label><input type="radio" name="format-kleine" value="doublette" checked /> Doublette (2 vs 2)</label>
+            <label><input type="radio" name="format-kleine" value="triplette" /> Triplette (3 vs 3)</label>
+          </div>
+          <button class="btn secondary" data-form-teams="kleine">Teams bilden</button>
+          <div class="final-body" data-body="kleine"></div>
+        </div>
+      </div>
+
+      <div class="view-actions">
+        <button id="btn-goto-summary" class="btn primary large hidden">Turnierergebnis anzeigen →</button>
+      </div>
+    </div>
 
     <div class="export-row">
       <button id="btn-share-history" class="btn ghost small">🔗 Turnier-Stand als Link teilen</button>
@@ -158,40 +188,6 @@
 
     <div class="view-actions">
       <button id="btn-standings-continue" class="btn primary large"></button>
-    </div>
-  </section>
-
-  <!-- ===== FINALRUNDEN ===== -->
-  <section id="view-finals" class="view hidden">
-    <div class="view-head">
-      <h2>Finalrunden</h2>
-      <p class="hint">Ungerade Platzierungen spielen gegen gerade Platzierungen der Endtabelle.</p>
-    </div>
-
-    <div class="finals-grid">
-      <div class="final-card" id="final-grosse" data-final="grosse">
-        <h3>🏆 Großes Finale</h3>
-        <div class="format-choice">
-          <label><input type="radio" name="format-grosse" value="doublette" checked /> Doublette (2 vs 2)</label>
-          <label><input type="radio" name="format-grosse" value="triplette" /> Triplette (3 vs 3)</label>
-        </div>
-        <button class="btn secondary" data-form-teams="grosse">Teams bilden</button>
-        <div class="final-body" data-body="grosse"></div>
-      </div>
-
-      <div class="final-card" id="final-kleine" data-final="kleine">
-        <h3>🥈 Kleines Finale</h3>
-        <div class="format-choice">
-          <label><input type="radio" name="format-kleine" value="doublette" checked /> Doublette (2 vs 2)</label>
-          <label><input type="radio" name="format-kleine" value="triplette" /> Triplette (3 vs 3)</label>
-        </div>
-        <button class="btn secondary" data-form-teams="kleine">Teams bilden</button>
-        <div class="final-body" data-body="kleine"></div>
-      </div>
-    </div>
-
-    <div class="view-actions">
-      <button id="btn-goto-summary" class="btn primary large hidden">Turnierergebnis anzeigen →</button>
     </div>
   </section>
 

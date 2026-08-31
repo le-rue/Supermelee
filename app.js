@@ -29,7 +29,7 @@ let state = loadState();
 /* =========================================================
    NAVIGATION
    ========================================================= */
-const VIEWS = ["players", "setup", "round", "history", "standings", "finals", "summary"];
+const VIEWS = ["players", "setup", "round", "history", "standings", "summary"];
 let currentView = "players";
 
 const STEP_DEFS = [
@@ -68,9 +68,9 @@ function renderTrack() {
   const activeKey = currentView === "players" ? "players"
     : currentView === "setup" ? "setup"
     : currentView === "round" ? "round" + (state.tournament ? state.tournament.roundIndex : 1)
-    : currentView === "history" ? "round" + (state.tournament ? state.tournament.roundIndex : 1)
+    : currentView === "history" ? (state.tournament && (state.tournament.stage === "finals" || state.tournament.stage === "done") ? "finals" : "round" + (state.tournament ? state.tournament.roundIndex : 1))
     : currentView === "standings" ? "round" + (state.tournament ? state.tournament.roundIndex : 1)
-    : currentView === "finals" || currentView === "summary" ? "finals"
+    : currentView === "summary" ? "finals"
     : "players";
 
   const reachedIndex = STEP_DEFS.findIndex((s) => s.key === currentStepKey());
@@ -105,11 +105,15 @@ document.querySelectorAll("[data-nav]").forEach((btn) => {
     if (target === "round" && !state.tournament) return;
     if (target === "history" && !state.tournament) return;
     if (target === "standings" && (!state.tournament || !state.tournament.rounds.some((r) => r && r.locked))) return;
-    if (target === "finals" && (!state.tournament || state.tournament.roundIndex < 3)) return;
-    if (target === "round") { renderRoundView(); showView("round"); return; }
+    if (target === "round") {
+      // Während der Finalrunden führt "Aktuelle Runde" direkt zu den Finalrunden in der Rundenübersicht.
+      if (state.tournament && (state.tournament.stage === "finals" || state.tournament.stage === "done")) {
+        renderHistoryView(); showView("history"); return;
+      }
+      renderRoundView(); showView("round"); return;
+    }
     if (target === "history") { renderHistoryView(); showView("history"); return; }
     if (target === "standings") { renderStandingsView(); showView("standings"); return; }
-    if (target === "finals") { renderFinalsView(); showView("finals"); return; }
     if (target === "setup") { renderSetupView(); showView("setup"); return; }
     renderPlayersView();
     showView(target);
@@ -403,7 +407,7 @@ function renderRoundView() {
     matchesWrap.classList.remove("hidden");
     document.getElementById("round-hint").textContent = round.locked
       ? "Diese Runde ist abgeschlossen."
-      : "Trage nach den Spielen die Ergebnisse ein (Punkte je Team, meist bis 13).";
+      : "Trage nach den Spielen die Ergebnisse ein (Punkte je Team).";
     renderMatches(round);
   }
 }
@@ -557,8 +561,8 @@ function goToNextStage() {
     t.stage = "finals";
     if (!t.finals) t.finals = { grosse: null, kleine: null };
     saveState();
-    renderFinalsView();
-    showView("finals");
+    renderHistoryView();
+    showView("history");
   } else {
     t.roundIndex++;
     t.stage = "round";
@@ -634,6 +638,15 @@ function renderHistoryView() {
     block.className = "history-round";
     block.innerHTML = `<div class="history-round-head"><h3>Runde ${roundNum}</h3><span class="status-pill ${statusClass}">${statusLabel}</span></div>${inner}`;
     wrap.appendChild(block);
+  }
+
+  // Finalrunden sind Teil dieser Übersicht, sobald Runde 3 abgeschlossen ist.
+  const finalsWrap = document.getElementById("history-finals-wrap");
+  const finalsReachable = t.roundIndex >= 3 && t.rounds[2] && t.rounds[2].locked;
+  finalsWrap.classList.toggle("hidden", !finalsReachable);
+  if (finalsReachable) {
+    if (!t.finals) t.finals = { grosse: null, kleine: null };
+    renderFinalsView();
   }
 }
 
@@ -827,13 +840,7 @@ function renderSharedReportFromHash() {
     html += `</div>`;
   }
 
-  html += `<div class="view-actions"><button id="btn-open-own-app" class="btn ghost large">Eigene Süpermeleé-App öffnen</button></div>`;
-
   document.getElementById("shared-content").innerHTML = html;
-  document.getElementById("btn-open-own-app").addEventListener("click", () => {
-    location.hash = "";
-    location.reload();
-  });
   return true;
 }
 
@@ -1014,7 +1021,7 @@ function renderFinalCard(key, offset) {
     const winnerNames = (winnerIsA ? existing.teamA : existing.teamB).map(playerName).join(" & ");
     const result = document.createElement("div");
     result.className = "final-result";
-    result.textContent = `Sieger: ${winnerNames} (${existing.scoreA}:${existing.scoreB})`;
+    result.textContent = `Sieger: ${winnerNames}`;
     body.appendChild(result);
   }
 }
@@ -1140,7 +1147,7 @@ function init() {
   if (state.tournament) {
     const t = state.tournament;
     if (t.stage === "done") { renderSummaryView(); showView("summary"); }
-    else if (t.stage === "finals") { renderFinalsView(); showView("finals"); }
+    else if (t.stage === "finals") { renderHistoryView(); showView("history"); }
     else if (t.stage === "standings") { renderStandingsView(); showView("standings"); }
     else { renderRoundView(); showView("round"); }
   } else {
